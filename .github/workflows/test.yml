@@ -46,8 +46,8 @@ jobs:
 
       - name: Install dev dependencies
         run: |
-          apt update
-          apt install -y uuid-dev
+          sudo apt update
+          sudo apt install -y uuid-dev
 
       - name: Build EDK2
         run: sh scripts/test/build_edk2.sh
