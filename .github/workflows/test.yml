@@ -20,7 +20,6 @@ jobs:
         run: |
           rustup component add llvm-tools-preview
           cargo install cargo-binutils
-          cargo binutils setup
       
       - name: Prepare for Build
         run: |
