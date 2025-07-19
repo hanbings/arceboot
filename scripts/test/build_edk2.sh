@@ -36,9 +36,9 @@ export GCC5_RISCV64_PREFIX=riscv64-unknown-elf-
 export PACKAGES_PATH=$WORKSPACE/edk2
 export EDK_TOOLS_PATH=$WORKSPACE/edk2/BaseTools
 
-source "$EDK_DIR/edksetup.sh" --reconfig
+. "$EDK_DIR/edksetup.sh" --reconfig
 make -C edk2/BaseTools
-source "$EDK_DIR/edksetup.sh" BaseTools
+. "$EDK_DIR/edksetup.sh" BaseTools
 
 mkdir -p "$EDK_DIR/Hello"
 cp -r "$PROJECT_ROOT/tests/edk2-hello" "$EDK_DIR"
