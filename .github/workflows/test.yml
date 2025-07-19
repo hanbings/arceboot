@@ -16,6 +16,12 @@ jobs:
           target: riscv64gc-unknown-none-elf
           toolchain: nightly-2025-03-31
       
+      - name: Install cargo-binutils and rust-objcopy
+        run: |
+          rustup component add llvm-tools-preview
+          cargo install cargo-binutils
+          cargo binutils setup
+      
       - name: Prepare for Build
         run: |
           # Fix breaking update in rust dependency.
