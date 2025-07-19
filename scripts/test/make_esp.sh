@@ -14,7 +14,7 @@ echo "[1/3] 挂载 FAT32 镜像..."
 sudo mount -o loop "$IMG_NAME" "$MOUNT_DIR"
 
 echo "[2/3] 创建 ESP 目录结构..."
-mkdir -p "$ESP_DIR"
+sudo mkdir -p "$ESP_DIR"
 
 echo "[3/3] 复制 efi 文件到 ESP..."
-cp "$PROJECT_ROOT/edk2/edk2/Build/MdeModule/DEBUG_GCC5/RISCV64/Hello/Hello/DEBUG/Hello.efi" "$ESP_DIR/BOOTRISCV64.EFI"
+sudo cp "$PROJECT_ROOT/edk2/edk2/Build/MdeModule/DEBUG_GCC5/RISCV64/Hello/Hello/DEBUG/Hello.efi" "$ESP_DIR/BOOTRISCV64.EFI"

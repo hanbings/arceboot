@@ -9,25 +9,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install dev dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y uuid-dev
-
-      - name: Build EDK2
-        run: sh scripts/test/build_edk2.sh
-
-      - name: Set up Rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          target: riscv64gc-unknown-none-elf
-          toolchain: nightly-2025-03-31
       
       - name: Install cargo-binutils and rust-objcopy
         run: |
@@ -51,11 +32,30 @@ jobs:
         run: |
           make defconfig
           make
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dev dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y uuid-dev
+
+      - name: Build EDK2
+        run: sh scripts/test/build_edk2.sh
+
+      - name: Set up Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: riscv64gc-unknown-none-elf
+          toolchain: nightly-2025-03-31
       
-      - name: Prepare disk image
+      - name: Generate disk image
         run: sh scripts/test/disk.sh
 
-      - name: Prepare ESP
+      - name: Create EFI System Partition (ESP)
         run: sh scripts/test/make_esp.sh
 
       - name: Run tests
