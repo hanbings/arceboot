@@ -19,16 +19,6 @@ else
     echo "RISCV 工具链已存在，跳过下载。"
 fi
 
-if ! command -v python &> /dev/null; then
-    echo "Python3 未安装，请先安装 Python3。"
-    exit 1
-fi
-
-if ! command -v python3 &> /dev/null; then
-    echo "Python3 未安装，请先安装 Python3。"
-    exit 1
-fi
-
 echo "[2/3] 克隆 EDK2 仓库..."
 if [ ! -d "$EDK_DIR" ]; then
     git clone --recurse-submodule https://github.com/tianocore/edk2.git "$EDK_DIR"
