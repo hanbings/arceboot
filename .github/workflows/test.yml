@@ -42,5 +42,5 @@ jobs:
       - name: Build EDK2
         run: sh scripts/test/build_edk2.sh
       
-      - name: Prepare Runable disk image
+      - name: Prepare disk image
         run: sh scripts/test/disk.sh
