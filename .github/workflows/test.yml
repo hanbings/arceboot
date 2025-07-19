@@ -54,3 +54,9 @@ jobs:
       
       - name: Prepare disk image
         run: sh scripts/test/disk.sh
+
+      - name: Prepare ESP
+        run: sh scripts/test/make_esp.sh
+
+      - name: Run tests
+        run: make run
