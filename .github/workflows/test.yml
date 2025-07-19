@@ -17,4 +17,8 @@ jobs:
           toolchain: nightly
 
       - name: Build with Makefile
-        run: make
+        run: |
+          sed -i '/^SBI :=/s#riscv64imac-unknown-none-elf#riscv64gc-unknown-none-elf#' Makefile
+          sed -i '/^SBI :=/s#riscv64imac-unknown-none-elf#riscv64gc-unknown-none-elf#' scripts/make/build.mk
+          make defconfig
+          make
