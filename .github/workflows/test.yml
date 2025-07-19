@@ -15,10 +15,17 @@ jobs:
         with:
           target: riscv64gc-unknown-none-elf
           toolchain: nightly
+      
+      - name: Prepare for Build
+        run: |
+          # Fix breaking update in rust dependency.
+          cargo fetch
+          find ~/.cargo/git/checkouts/ -type f -name '*.rs' -exec sed -i 's/#\[naked\]/#[unsafe(naked)]/g' {} +
+          # Correct incorrect build directory name in build script.
+          sed -i '/^SBI :=/s#riscv64imac-unknown-none-elf#riscv64gc-unknown-none-elf#' Makefile
+          sed -i '/^SBI :=/s#riscv64imac-unknown-none-elf#riscv64gc-unknown-none-elf#' scripts/make/build.mk
 
       - name: Build with Makefile
         run: |
-          sed -i '/^SBI :=/s#riscv64imac-unknown-none-elf#riscv64gc-unknown-none-elf#' Makefile
-          sed -i '/^SBI :=/s#riscv64imac-unknown-none-elf#riscv64gc-unknown-none-elf#' scripts/make/build.mk
           make defconfig
           make
