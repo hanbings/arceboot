@@ -36,11 +36,6 @@ export GCC5_RISCV64_PREFIX=riscv64-unknown-elf-
 export PACKAGES_PATH=$WORKSPACE/edk2
 export EDK_TOOLS_PATH=$WORKSPACE/edk2/BaseTools
 
-echo "设置 EDK2 环境变量..."
-echo "WORKSPACE: $WORKSPACE"
-echo `pwd`
-echo `ls`
-
 sh edk2/edksetup.sh --reconfig
 make -C edk2/BaseTools
 sh edk2/edksetup.sh BaseTools
