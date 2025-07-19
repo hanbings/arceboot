@@ -10,6 +10,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dev dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y uuid-dev
+
+      - name: Build EDK2
+        run: sh scripts/test/build_edk2.sh
+
       - name: Set up Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -38,19 +51,6 @@ jobs:
         run: |
           make defconfig
           make
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install dev dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y uuid-dev
-
-      - name: Build EDK2
-        run: sh scripts/test/build_edk2.sh
       
       - name: Prepare disk image
         run: sh scripts/test/disk.sh
