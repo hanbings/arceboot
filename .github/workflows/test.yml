@@ -9,6 +9,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: riscv64gc-unknown-none-elf
+          toolchain: nightly-2025-03-31
       
       - name: Install cargo-binutils and rust-objcopy
         run: |
@@ -45,12 +51,6 @@ jobs:
 
       - name: Build EDK2
         run: sh scripts/test/build_edk2.sh
-
-      - name: Set up Rust toolchain
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          target: riscv64gc-unknown-none-elf
-          toolchain: nightly-2025-03-31
       
       - name: Generate disk image
         run: sh scripts/test/disk.sh
