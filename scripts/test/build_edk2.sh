@@ -44,7 +44,7 @@ mkdir -p "$EDK_DIR/Hello"
 cp -r "$PROJECT_ROOT/tests/edk2-hello" "$EDK_DIR"
 mv "$EDK_DIR/edk2-hello"/* "$EDK_DIR/Hello/"
 cp -r "$EDK_DIR/MdeModulePkg/MdeModulePkg.dsc" "$EDK_DIR/Hello/Hello.dsc"
-echo -e "\n[Components]\n  Hello/Hello.inf" >> "$EDK_DIR/Hello/Hello.dsc"
+printf "\n[Components]\n  Hello/Hello.inf\n" >> "$EDK_DIR/Hello/Hello.dsc"
 build -a RISCV64 -t GCC5 -p "$EDK_DIR/Hello/Hello.dsc"
 
 echo "EDK2 构建完成。生成的镜像位于：$WORKSPACE_DIR/Build/MdeModule/DEBUG_GCC5/RISCV64/Hello/Hello/DEBUG/Hello.efi"
