@@ -47,7 +47,7 @@ make -C edk2/BaseTools
 # printf "\n[Components]\n  Hello/Hello.inf\n" >> "$EDK_DIR/Hello/Hello.dsc"
 # build -a RISCV64 -t GCC5 -p "$EDK_DIR/Hello/Hello.dsc"
 cp -r "$PROJECT_ROOT/tests/edk2-HelloRiscv" "$EDK_DIR"
-mv "$EDK_DIR/edk2-HelloRiscv"/* "$EDK_DIR/HelloRiscv/"
+mv "$EDK_DIR/edk2-HelloRiscv" "$EDK_DIR/HelloRiscv/"
 build -a RISCV64 -t GCC5 -p "$EDK_DIR/HelloRiscv/HelloRiscv.dsc"
 
 echo "EDK2 构建完成。生成的镜像位于：$WORKSPACE_DIR/Build/DEBUG_GCC5/RISCV64/HelloRiscv.efi"
