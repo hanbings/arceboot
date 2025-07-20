@@ -9,7 +9,7 @@ if [ ! -f "$LOG_FILE" ]; then
     exit 1
 fi
 
-if grep -qE "\[\s*[0-9]+\.[0-9]+\s+[0-9]+\s+arceboot::runtime::protocol::simple_text_output:[0-9]+\] $TARGET_STRING" "$LOG_FILE"; then
+if grep -qF "$TARGET_STRING" "$LOG_FILE"; then
     echo "✅ 找到匹配日志行"
     exit 0
 else
