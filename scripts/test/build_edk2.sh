@@ -40,11 +40,13 @@ export EDK_TOOLS_PATH=$WORKSPACE/edk2/BaseTools
 make -C edk2/BaseTools
 . "$EDK_DIR/edksetup.sh" BaseTools
 
-mkdir -p "$EDK_DIR/Hello"
-cp -r "$PROJECT_ROOT/tests/edk2-hello" "$EDK_DIR"
-mv "$EDK_DIR/edk2-hello"/* "$EDK_DIR/Hello/"
-cp -r "$EDK_DIR/MdeModulePkg/MdeModulePkg.dsc" "$EDK_DIR/Hello/Hello.dsc"
-printf "\n[Components]\n  Hello/Hello.inf\n" >> "$EDK_DIR/Hello/Hello.dsc"
-build -a RISCV64 -t GCC5 -p "$EDK_DIR/Hello/Hello.dsc"
+# mkdir -p "$EDK_DIR/Hello"
+# cp -r "$PROJECT_ROOT/tests/edk2-Hello" "$EDK_DIR"
+# mv "$EDK_DIR/edk2-Hello"/* "$EDK_DIR/Hello/"
+# cp -r "$EDK_DIR/MdeModulePkg/MdeModulePkg.dsc" "$EDK_DIR/Hello/Hello.dsc"
+# printf "\n[Components]\n  Hello/Hello.inf\n" >> "$EDK_DIR/Hello/Hello.dsc"
+# build -a RISCV64 -t GCC5 -p "$EDK_DIR/Hello/Hello.dsc"
+cp -r "$PROJECT_ROOT/tests/edk2-HelloRiscv" "$EDK_DIR"
+build -a RISCV64 -t GCC5 -p "$EDK_DIR/HelloRiscv/HelloRiscv.dsc"
 
-echo "EDK2 构建完成。生成的镜像位于：$WORKSPACE_DIR/Build/MdeModule/DEBUG_GCC5/RISCV64/Hello/Hello/DEBUG/Hello.efi"
+echo "EDK2 构建完成。生成的镜像位于：$WORKSPACE_DIR/Build/DEBUG_GCC5/RISCV64/HelloRiscv.efi"

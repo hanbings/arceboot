@@ -17,7 +17,7 @@ echo "[2/3] 创建 ESP 目录结构..."
 sudo mkdir -p "$ESP_DIR"
 
 echo "[3/3] 复制 efi 文件到 ESP..."
-sudo cp "$PROJECT_ROOT/edk2/Build/MdeModule/DEBUG_GCC5/RISCV64/Hello/Hello/DEBUG/Hello.efi" "$ESP_DIR/BOOTRISCV64.EFI"
+sudo cp "$PROJECT_ROOT/edk2/Build/DEBUG_GCC5/RISCV64/HelloRiscv.efi" "$ESP_DIR/BOOTRISCV64.EFI"
 
 sudo find "$ESP_DIR" -type d | while read -r dir; do
     echo "$dir"
