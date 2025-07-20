@@ -66,5 +66,11 @@ jobs:
       - name: Run QEMU
         run: make run > qemu.log
 
+      - name: Upload QEMU log
+        uses: actions/upload-artifact@v4
+        with:
+          name: log
+          path: qemu.log
+
       - name: Check QEMU output
         run: sh scripts/test/check_hello_test.sh
