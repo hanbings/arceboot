@@ -1,7 +1,7 @@
 use alloc::vec::Vec;
 use axhal::{
     mem::{MemoryAddr, PhysAddr, VirtAddr},
-    paging::MappingFlags, 
+    paging::MappingFlags,
 };
 use axsync::Mutex;
 use uefi_raw::table::boot::MemoryType;
@@ -15,7 +15,7 @@ pub(crate) enum AllocateType {
     MaxAddress = 1, // AllocateMaxAddress
     Address = 2,    // AllocateAddress
 }
- 
+
 impl TryFrom<u32> for AllocateType {
     type Error = ();
 
