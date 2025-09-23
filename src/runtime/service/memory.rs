@@ -35,7 +35,7 @@ impl From<AllocateType> for u32 {
     }
 }
 
-pub fn alloc_pages(alloc_type: AllocateType, memory_type: MemoryType, count: usize) -> *mut u8 {
+pub fn alloc_pages(_alloc_type: AllocateType, _memory_type: MemoryType, count: usize) -> *mut u8 {
     let layout = core::alloc::Layout::from_size_align(count * 4096, 4096)
         .expect("Invalid layout for allocate_pages");
     let ptr = axalloc::global_allocator()
@@ -57,10 +57,10 @@ pub fn alloc_pages(alloc_type: AllocateType, memory_type: MemoryType, count: usi
     ptr
 }
 
-pub fn free_pages(addr: PhysAddr, page: usize) {}
+pub fn free_pages(_addr: PhysAddr, _page: usize) {}
 
-pub fn allocate_pool(memory_type: MemoryType, size: usize) -> *mut u8 {
+pub fn allocate_pool(_memory_type: MemoryType, _size: usize) -> *mut u8 {
     core::ptr::null_mut()
 }
 
-pub fn free_pool(buffer: *mut u8) {}
+pub fn free_pool(_buffer: *mut u8) {}
