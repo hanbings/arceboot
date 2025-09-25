@@ -180,6 +180,7 @@ pub unsafe extern "efiapi" fn set_mode(
     }
 }
 
+#[cfg(feature = "display")]
 pub unsafe extern "efiapi" fn blt(
     this: *mut GraphicsOutputProtocol,
     blt_buffer: *mut GraphicsOutputBltPixel,
@@ -192,134 +193,139 @@ pub unsafe extern "efiapi" fn blt(
     height: usize,
     delta: usize,
 ) -> Status {
-    #[cfg(feature = "display")]
+    let Some((fb_base, fb_size, w, h, stride_px)) = with_go(this, |go| {
+        (
+            go.fb_base_vaddr,
+            go.fb_size,
+            go.width as usize,
+            go.height as usize,
+            go.stride_pixels as usize,
+        )
+    }) else {
+        return Status::DEVICE_ERROR;
+    };
+
+    if width == 0 || height == 0 {
+        return Status::SUCCESS;
+    }
+
+    if destination_x >= w
+        || destination_y >= h
+        || destination_x + width > w
+        || destination_y + height > h
     {
-        let Some((fb_base, fb_size, w, h, stride_px)) = with_go(this, |go| {
-            (
-                go.fb_base_vaddr,
-                go.fb_size,
-                go.width as usize,
-                go.height as usize,
-                go.stride_pixels as usize,
-            )
-        }) else {
-            return Status::DEVICE_ERROR;
-        };
+        return Status::INVALID_PARAMETER;
+    }
 
-        if width == 0 || height == 0 {
-            return Status::SUCCESS;
-        }
+    let bytes_per_pixel = 4usize;
+    let fb_pitch = stride_px * bytes_per_pixel;
+    let fb = fb_base as *mut u8;
 
-        if destination_x >= w
-            || destination_y >= h
-            || destination_x + width > w
-            || destination_y + height > h
-        {
-            return Status::INVALID_PARAMETER;
-        }
-
-        let bytes_per_pixel = 4usize;
-        let fb_pitch = stride_px * bytes_per_pixel;
-        let fb = fb_base as *mut u8;
-
-        unsafe {
-            match blt_operation {
-                GraphicsOutputBltOperation::BLT_VIDEO_FILL => {
-                    // fill (dest_x, dest_y, width, height) with the color of blt_buffer[0]
-                    if blt_buffer.is_null() {
-                        return Status::INVALID_PARAMETER;
-                    }
-                    let px = *blt_buffer;
-                    let color = [px.blue, px.green, px.red, 0]; // BGRA
-                    for row in 0..height {
-                        let row_ptr = fb.add(
-                            (destination_y + row) * fb_pitch + destination_x * bytes_per_pixel,
-                        );
-                        for col in 0..width {
-                            let p = row_ptr.add(col * bytes_per_pixel);
-                            // 写 B,G,R,A
-                            *p.add(0) = color[0];
-                            *p.add(1) = color[1];
-                            *p.add(2) = color[2];
-                            *p.add(3) = color[3];
-                        }
-                    }
-                    axdisplay::framebuffer_flush();
-                    Status::SUCCESS
+    unsafe {
+        match blt_operation {
+            GraphicsOutputBltOperation::BLT_VIDEO_FILL => {
+                // fill (dest_x, dest_y, width, height) with the color of blt_buffer[0]
+                if blt_buffer.is_null() {
+                    return Status::INVALID_PARAMETER;
                 }
-                GraphicsOutputBltOperation::BLT_VIDEO_TO_BLT_BUFFER => {
-                    if blt_buffer.is_null() {
-                        return Status::INVALID_PARAMETER;
+                let px = *blt_buffer;
+                let color = [px.blue, px.green, px.red, 0]; // BGRA
+                for row in 0..height {
+                    let row_ptr =
+                        fb.add((destination_y + row) * fb_pitch + destination_x * bytes_per_pixel);
+                    for col in 0..width {
+                        let p = row_ptr.add(col * bytes_per_pixel);
+                        // 写 B,G,R,A
+                        *p.add(0) = color[0];
+                        *p.add(1) = color[1];
+                        *p.add(2) = color[2];
+                        *p.add(3) = color[3];
                     }
-
-                    // Each row in BLT buffer: if Delta == 0, tightly packed (Width * 4 bytes).
-                    let dst_pitch = if delta == 0 {
-                        width * bytes_per_pixel
-                    } else {
-                        delta
-                    };
-
-                    for row in 0..height {
-                        // Source: read pixels from framebuffer at (source_x, source_y + row).
-                        let src = fb.add((source_y + row) * fb_pitch + source_x * bytes_per_pixel);
-
-                        // Destination: write into BLT buffer at (destination_x, destination_y + row).
-                        let dst = (blt_buffer as *mut u8).add(
-                            (destination_y + row) * dst_pitch + destination_x * bytes_per_pixel,
-                        );
-
-                        // Copy one scan line (Width * 4 bytes).
-                        core::ptr::copy_nonoverlapping(src, dst, width * bytes_per_pixel);
-                    }
-
-                    Status::SUCCESS
                 }
-                GraphicsOutputBltOperation::BLT_BUFFER_TO_VIDEO => {
-                    if blt_buffer.is_null() {
-                        return Status::INVALID_PARAMETER;
-                    }
-                    // in UEFI GOP spec, Delta = bytes per scan line in the BLT buffer.
-                    // if Delta == 0, it means the buffer is tightly packed: Width * sizeof(BltPixel) = Width * 4.
-                    let src_pitch = if delta == 0 {
-                        width * bytes_per_pixel
-                    } else {
-                        delta
-                    };
-
-                    for row in 0..height {
-                        let dst = fb.add(
-                            (destination_y + row) * fb_pitch + destination_x * bytes_per_pixel,
-                        );
-                        let src = (blt_buffer as *const u8)
-                            .add((source_y + row) * src_pitch + source_x * bytes_per_pixel);
-                        core::ptr::copy_nonoverlapping(src, dst, width * bytes_per_pixel);
-                    }
-                    axdisplay::framebuffer_flush();
-                    Status::SUCCESS
-                }
-                GraphicsOutputBltOperation::BLT_VIDEO_TO_VIDEO => {
-                    // internal memory transfer, supporting overlap (memmove semantics)
-                    let src_x = source_x;
-                    let src_y = source_y;
-                    if src_x >= w || src_y >= h || src_x + width > w || src_y + height > h {
-                        return Status::INVALID_PARAMETER;
-                    }
-                    for row in 0..height {
-                        let dst = fb.add(
-                            (destination_y + row) * fb_pitch + destination_x * bytes_per_pixel,
-                        );
-                        let src = fb.add((src_y + row) * fb_pitch + src_x * bytes_per_pixel);
-                        core::ptr::copy(src, dst, width * bytes_per_pixel);
-                    }
-                    axdisplay::framebuffer_flush();
-                    Status::SUCCESS
-                }
-                _ => Status::UNSUPPORTED,
+                axdisplay::framebuffer_flush();
+                Status::SUCCESS
             }
+            GraphicsOutputBltOperation::BLT_VIDEO_TO_BLT_BUFFER => {
+                if blt_buffer.is_null() {
+                    return Status::INVALID_PARAMETER;
+                }
+
+                // Each row in BLT buffer: if Delta == 0, tightly packed (Width * 4 bytes).
+                let dst_pitch = if delta == 0 {
+                    width * bytes_per_pixel
+                } else {
+                    delta
+                };
+
+                for row in 0..height {
+                    // Source: read pixels from framebuffer at (source_x, source_y + row).
+                    let src = fb.add((source_y + row) * fb_pitch + source_x * bytes_per_pixel);
+
+                    // Destination: write into BLT buffer at (destination_x, destination_y + row).
+                    let dst = (blt_buffer as *mut u8)
+                        .add((destination_y + row) * dst_pitch + destination_x * bytes_per_pixel);
+
+                    // Copy one scan line (Width * 4 bytes).
+                    core::ptr::copy_nonoverlapping(src, dst, width * bytes_per_pixel);
+                }
+
+                Status::SUCCESS
+            }
+            GraphicsOutputBltOperation::BLT_BUFFER_TO_VIDEO => {
+                if blt_buffer.is_null() {
+                    return Status::INVALID_PARAMETER;
+                }
+                // in UEFI GOP spec, Delta = bytes per scan line in the BLT buffer.
+                // if Delta == 0, it means the buffer is tightly packed: Width * sizeof(BltPixel) = Width * 4.
+                let src_pitch = if delta == 0 {
+                    width * bytes_per_pixel
+                } else {
+                    delta
+                };
+
+                for row in 0..height {
+                    let dst =
+                        fb.add((destination_y + row) * fb_pitch + destination_x * bytes_per_pixel);
+                    let src = (blt_buffer as *const u8)
+                        .add((source_y + row) * src_pitch + source_x * bytes_per_pixel);
+                    core::ptr::copy_nonoverlapping(src, dst, width * bytes_per_pixel);
+                }
+                axdisplay::framebuffer_flush();
+                Status::SUCCESS
+            }
+            GraphicsOutputBltOperation::BLT_VIDEO_TO_VIDEO => {
+                // internal memory transfer, supporting overlap (memmove semantics)
+                let src_x = source_x;
+                let src_y = source_y;
+                if src_x >= w || src_y >= h || src_x + width > w || src_y + height > h {
+                    return Status::INVALID_PARAMETER;
+                }
+                for row in 0..height {
+                    let dst =
+                        fb.add((destination_y + row) * fb_pitch + destination_x * bytes_per_pixel);
+                    let src = fb.add((src_y + row) * fb_pitch + src_x * bytes_per_pixel);
+                    core::ptr::copy(src, dst, width * bytes_per_pixel);
+                }
+                axdisplay::framebuffer_flush();
+                Status::SUCCESS
+            }
+            _ => Status::UNSUPPORTED,
         }
     }
-    #[cfg(not(feature = "display"))]
-    {
-        Status::UNSUPPORTED
-    }
+}
+
+#[cfg(not(feature = "display"))]
+pub unsafe extern "efiapi" fn blt(
+    _this: *mut GraphicsOutputProtocol,
+    _blt_buffer: *mut GraphicsOutputBltPixel,
+    _blt_operation: GraphicsOutputBltOperation,
+    _source_x: usize,
+    _source_y: usize,
+    _destination_x: usize,
+    _destination_y: usize,
+    _width: usize,
+    _height: usize,
+    _delta: usize,
+) {
+    Status::UNSUPPORTED
 }
