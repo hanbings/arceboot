@@ -100,7 +100,7 @@ impl Drop for GraphicsOutput {
 }
 
 #[inline]
-fn with_go<F, R>(this: *const GraphicsOutputProtocol, f: F) -> Option<R>
+fn with_go<F, R>(_this: *const GraphicsOutputProtocol, f: F) -> Option<R>
 where
     F: FnOnce(&GraphicsOutput) -> R,
 {
@@ -326,6 +326,6 @@ pub unsafe extern "efiapi" fn blt(
     _width: usize,
     _height: usize,
     _delta: usize,
-) {
+) -> Status {
     Status::UNSUPPORTED
 }
