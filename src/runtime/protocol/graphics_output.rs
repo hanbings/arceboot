@@ -16,10 +16,14 @@ static GRAPHICS_OUTPUT: LazyInit<Mutex<GraphicsOutput>> = LazyInit::new();
 pub struct GraphicsOutput {
     protocol: &'static mut GraphicsOutputProtocol,
     protocol_raw: *mut GraphicsOutputProtocol,
+    width: u32,
+    height: u32,
+    fb_base_vaddr: usize,
+    fb_size: usize,
 }
 
 impl GraphicsOutput {
-    pub fn new() -> Self {
+    pub fn new(width: u32, height: u32, fb_base_vaddr: usize, fb_size: usize) -> Self {
         let mode: *mut GraphicsOutputProtocolMode = core::ptr::null_mut();
 
         let protocol = GraphicsOutputProtocol {
@@ -35,6 +39,10 @@ impl GraphicsOutput {
         Self {
             protocol,
             protocol_raw,
+            width,
+            height,
+            fb_base_vaddr,
+            fb_size,
         }
     }
 
@@ -58,6 +66,8 @@ pub fn init_graphics_output() {
     #[cfg(feature = "display")]
     {
         let display_info = axdisplay::framebuffer_info();
+        info!("Graphics Output Protocol initialized: {:?}", display_info);
+
         let frame_buffer_base = display_info.fb_base_vaddr;
         let frame_buffer_size = display_info.fb_size;
 
@@ -67,7 +77,12 @@ pub fn init_graphics_output() {
 
         axdisplay::framebuffer_flush();
 
-        GRAPHICS_OUTPUT.init_once(Mutex::new(GraphicsOutput::new()));
+        GRAPHICS_OUTPUT.init_once(Mutex::new(GraphicsOutput::new(
+            display_info.width,
+            display_info.height,
+            display_info.fb_base_vaddr,
+            display_info.fb_size,
+        )));
     }
 }
 
