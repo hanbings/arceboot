@@ -6,12 +6,8 @@ use core::{
 
 use axsync::Mutex;
 use lazyinit::LazyInit;
-use uefi_raw::{
-    Boolean, Char16,
-    protocol::device_path::{
-        DevicePathFromTextProtocol, DevicePathProtocol, DevicePathToTextProtocol,
-        DevicePathUtilitiesProtocol, DeviceSubType, DeviceType,
-    },
+use uefi_raw::protocol::device_path::{
+    DevicePathProtocol, DevicePathUtilitiesProtocol, DeviceSubType, DeviceType,
 };
 
 use alloc::boxed::Box;
@@ -26,15 +22,7 @@ const END_ENTIRE_DEVICE_PATH_SUBTYPE: u8 = 0xFF;
 // Common header size for every Device Path node (Type + SubType + Length[2])
 const DEV_PATH_HEADER_LEN: usize = 4;
 
-static DEVICE_PATH_TO_TEXT: LazyInit<Mutex<DevicePathToText>> = LazyInit::new();
-static DEVICE_PATH_FROM_TEXT: LazyInit<Mutex<DevicePathFromText>> = LazyInit::new();
 static DEVICE_PATH_UTILITIES: LazyInit<Mutex<DevicePathUtilities>> = LazyInit::new();
-
-pub fn init_device_path() {
-    DEVICE_PATH_TO_TEXT.init_once(Mutex::new(DevicePathToText::new()));
-    DEVICE_PATH_FROM_TEXT.init_once(Mutex::new(DevicePathFromText::new()));
-    DEVICE_PATH_UTILITIES.init_once(Mutex::new(DevicePathUtilities::new()));
-}
 
 #[inline]
 unsafe fn node_type(p: *const DevicePathProtocol) -> u8 {
@@ -109,90 +97,6 @@ unsafe fn copy_bytes_to_box(
     ptr_u8 as *const DevicePathProtocol
 }
 
-#[derive(Debug)]
-pub struct DevicePathToText {
-    protocol: &'static mut DevicePathToTextProtocol,
-    protocol_raw: *mut DevicePathToTextProtocol,
-}
-
-impl DevicePathToText {
-    pub fn new() -> Self {
-        let protocol = DevicePathToTextProtocol {
-            convert_device_node_to_text,
-            convert_device_path_to_text,
-        };
-        let protocol_raw = Box::into_raw(Box::new(protocol));
-        let protocol = unsafe { &mut *protocol_raw };
-        Self {
-            protocol,
-            protocol_raw,
-        }
-    }
-
-    pub fn get_protocol(&self) -> *mut DevicePathToTextProtocol {
-        self.protocol_raw
-    }
-}
-
-unsafe impl Send for DevicePathToText {}
-unsafe impl Sync for DevicePathToText {}
-
-pub extern "efiapi" fn convert_device_node_to_text(
-    _device_node: *const DevicePathProtocol,
-    _display_only: Boolean,
-    _allow_shortcuts: Boolean,
-) -> *const Char16 {
-    core::ptr::null()
-}
-
-pub extern "efiapi" fn convert_device_path_to_text(
-    _device_path: *const DevicePathProtocol,
-    _display_only: Boolean,
-    _allow_shortcuts: Boolean,
-) -> *const Char16 {
-    core::ptr::null()
-}
-
-#[derive(Debug)]
-pub struct DevicePathFromText {
-    protocol: &'static mut DevicePathFromTextProtocol,
-    protocol_raw: *mut DevicePathFromTextProtocol,
-}
-
-impl DevicePathFromText {
-    pub fn new() -> Self {
-        let protocol = DevicePathFromTextProtocol {
-            convert_text_to_device_node,
-            convert_text_to_device_path,
-        };
-        let protocol_raw = Box::into_raw(Box::new(protocol));
-        let protocol = unsafe { &mut *protocol_raw };
-        Self {
-            protocol,
-            protocol_raw,
-        }
-    }
-
-    pub fn get_protocol(&self) -> *mut DevicePathFromTextProtocol {
-        self.protocol_raw
-    }
-}
-
-unsafe impl Send for DevicePathFromText {}
-unsafe impl Sync for DevicePathFromText {}
-
-pub extern "efiapi" fn convert_text_to_device_node(
-    _text_device_node: *const Char16,
-) -> *const DevicePathProtocol {
-    core::ptr::null()
-}
-
-pub extern "efiapi" fn convert_text_to_device_path(
-    _text_device_path: *const Char16,
-) -> *const DevicePathProtocol {
-    core::ptr::null()
-}
-
 pub struct DevicePathUtilities {
     protocol: &'static mut DevicePathUtilitiesProtocol,
     protocol_raw: *mut DevicePathUtilitiesProtocol,
@@ -226,6 +130,10 @@ impl DevicePathUtilities {
 
 unsafe impl Send for DevicePathUtilities {}
 unsafe impl Sync for DevicePathUtilities {}
+
+pub fn init_device_path_uttilities() {
+    DEVICE_PATH_UTILITIES.init_once(Mutex::new(DevicePathUtilities::new()));
+}
 
 pub extern "efiapi" fn get_device_path_size(device_path: *const DevicePathProtocol) -> usize {
     unsafe {
@@ -393,7 +301,7 @@ pub extern "efiapi" fn append_device_path_instance(
             device_path_instance as *const u8,
             inst_len,
         ));
-        if let Some(last4) = out.get(out.len().saturating_sub(DEV_PATH_HEADER_LEN)..) {
+        if let Some(_last4) = out.get(out.len().saturating_sub(DEV_PATH_HEADER_LEN)..) {
             out.truncate(out.len().saturating_sub(DEV_PATH_HEADER_LEN));
         }
         out.extend_from_slice(&[
@@ -416,7 +324,7 @@ pub extern "efiapi" fn get_next_device_path_instance(
         if device_path_instance.is_null() || device_path_instance_size.is_null() {
             return ptr::null_mut();
         }
-        let mut cur = *device_path_instance;
+        let cur = *device_path_instance;
         if cur.is_null() {
             *device_path_instance_size = 0;
             return ptr::null_mut();
@@ -448,7 +356,6 @@ pub extern "efiapi" fn get_next_device_path_instance(
             0x04,
             0x00,
         ]);
-
 
         let after = (p as *const u8).add(DEV_PATH_HEADER_LEN);
         if is_end_instance(p) {
