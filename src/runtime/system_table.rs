@@ -50,6 +50,8 @@ pub fn init_system_table() {
 
     #[cfg(feature = "display")]
     crate::runtime::protocol::graphics_output::init_graphics_output();
+    #[cfg(feature = "virtiodisk")]
+    crate::runtime::protocol::block_io::init_block_io();
     #[cfg(feature = "fs")]
     crate::runtime::protocol::fs::simple_file_system::init_simple_file_system();
 
