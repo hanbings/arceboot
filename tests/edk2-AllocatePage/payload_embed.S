@@ -1,5 +1,4 @@
-// payload_embed.S — return-only payload; safe without framebuffer
-// 返回：a0 = a0+a1+a2+a3+a4 + 0x123456789ABCDEF0
+// payload_embed.S — return-only payload;
 
     .section .payload, "ax", @progbits
     .p2align 2
