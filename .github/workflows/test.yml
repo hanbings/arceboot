@@ -16,10 +16,16 @@ jobs:
           target: riscv64gc-unknown-none-elf
           toolchain: nightly-2025-03-31
 
+      - name: Rust version diagnostics
+        run: |
+          rustc -Vv
+          cargo -V
+          rustup show
+
       - name: Install cargo-binutils and rust-objcopy
         run: |
           rustup component add llvm-tools-preview
-          cargo install cargo-binutils
+          cargo install cargo-binutils --locked --version 0.4.0
 
       - name: Build with Makefile
         run: |
