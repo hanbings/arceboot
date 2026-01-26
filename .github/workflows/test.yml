@@ -58,16 +58,16 @@ jobs:
         run: EFI_FILE=edk2/Build/DEBUG_GCC5/RISCV64/HelloRiscv.efi sh scripts/test/make_esp.sh
 
       - name: Run QEMU (HelloRiscv)
-        run: make qemu-run > qemu-hello.log
+        run: make qemu-run > qemu-hello-riscv.log
 
       - name: Upload QEMU log (HelloRiscv)
         uses: actions/upload-artifact@v4
         with:
-          name: log-hello
-          path: qemu-hello.log
+          name: log-hello-riscv
+          path: qemu-hello-riscv.log
 
       - name: Check QEMU output (HelloRiscv)
-        run: sh scripts/test/check_hello_test.sh
+        run: sh scripts/test/check_hello_test_riscv.sh
 
       # Test 2: AllocatePage
       - name: Create ESP (AllocatePage)
