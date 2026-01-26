@@ -55,7 +55,7 @@ jobs:
 
       # Test 1: HelloRiscv
       - name: Create ESP (HelloRiscv)
-        run: EFI_NAME=HelloRiscv sh scripts/test/make_esp.sh
+        run: EFI_FILE=edk2/Build/DEBUG_GCC5/RISCV64/HelloRiscv.efi sh scripts/test/make_esp.sh
 
       - name: Run QEMU (HelloRiscv)
         run: make qemu-run > qemu-hello.log
@@ -71,7 +71,7 @@ jobs:
 
       # Test 2: AllocatePage
       - name: Create ESP (AllocatePage)
-        run: EFI_NAME=AllocatePage sh scripts/test/make_esp.sh
+        run: EFI_FILE=edk2/Build/DEBUG_GCC5/RISCV64/AllocatePage.efi sh scripts/test/make_esp.sh
 
       - name: Run QEMU (AllocatePage)
         run: make qemu-run > qemu-allocate.log
@@ -84,3 +84,19 @@ jobs:
 
       - name: Check QEMU output (AllocatePage)
         run: sh scripts/test/check_allocate_test.sh
+
+      # Test 3: Hello
+      - name: Create ESP (Hello)
+        run: EFI_FILE=edk2/Build/MdeModule/DEBUG_GCC5/RISCV64/Hello.efi sh scripts/test/make_esp.sh
+
+      - name: Run QEMU (Hello)
+        run: make qemu-run > qemu-hello.log
+
+      - name: Upload QEMU log (Hello)
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-hello
+          path: qemu-hello.log
+
+      - name: Check QEMU output (Hello)
+        run: sh scripts/test/check_hello_test.sh
