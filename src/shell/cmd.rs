@@ -8,7 +8,13 @@ const CMD_TABLE: &[(&str, &str, CmdHandler)] = &[
 ];
 
 pub fn run_cmd(line: &[u8]) {
-    let line_str = unsafe { core::str::from_utf8_unchecked(line) };
+    let line_str = match core::str::from_utf8(line) {
+        Ok(s) => s,
+        Err(_) => {
+            axlog::ax_println!("Invalid UTF-8 input");
+            return;
+        }
+    };
     let (cmd, args) = split_whitespace(line_str);
     if !cmd.is_empty() {
         for (name, _, func) in CMD_TABLE {

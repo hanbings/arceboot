@@ -55,10 +55,47 @@ pub fn alloc_pages(_alloc_type: AllocateType, _memory_type: MemoryType, count: u
         )
         .expect("Failed to protect EFI memory");
 
+    // Record allocation for later deallocation
+    let vaddr = VirtAddr::from_ptr_of(ptr);
+    ALLOCATED_PAGES.lock().push((vaddr, count));
+
     ptr
 }
 
-pub fn free_pages(_addr: PhysAddr, _page: usize) {}
+pub fn free_pages(addr: PhysAddr, pages: usize) {
+    use axhal::mem::phys_to_virt;
+
+    let vaddr = phys_to_virt(addr);
+    let mut allocated = ALLOCATED_PAGES.lock();
+
+    // Find the allocation record matching this address
+    if let Some(idx) = allocated.iter().position(|(v, _)| *v == vaddr) {
+        let (_, recorded_pages) = allocated.swap_remove(idx);
+
+        // Use the recorded page count if available, otherwise use the provided count
+        let page_count = if recorded_pages > 0 { recorded_pages } else { pages };
+
+        let layout = core::alloc::Layout::from_size_align(page_count * 4096, 4096)
+            .expect("Invalid layout for free_pages");
+
+        // Safety: pointer and layout came from our allocator in alloc_pages
+        unsafe {
+            axalloc::global_allocator().dealloc(
+                core::ptr::NonNull::new_unchecked(vaddr.as_mut_ptr()),
+                layout,
+            );
+        }
+    } else {
+        // Address not found in our records - this could be:
+        // 1. A double-free attempt
+        // 2. Memory allocated by other means
+        // Log a warning but don't panic to maintain UEFI compatibility
+        axlog::warn!(
+            "free_pages: address {:#x} not found in allocation records",
+            addr.as_usize()
+        );
+    }
+}
 
 pub fn allocate_pool(_memory_type: MemoryType, size: usize) -> *mut u8 {
     if size == 0 {
